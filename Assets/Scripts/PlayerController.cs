@@ -10,7 +10,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Mouse Look")]
     public Transform cameraTransform;
-    public float mouseSensitivity = 200f;
+    public float mouseSensitivity = 400f;
     private float xRotation = 0f;
 
     private CharacterController controller;
@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
-        Cursor.lockState = CursorLockMode.Locked;
+        //Cursor.lockState = CursorLockMode.Locked;
     }
 
     void Update()
