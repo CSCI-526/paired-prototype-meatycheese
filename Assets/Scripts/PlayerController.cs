@@ -21,6 +21,10 @@ public class PlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         //Cursor.lockState = CursorLockMode.Locked;
+        float startX = cameraTransform.localEulerAngles.x;
+        if (startX > 180f) startX -= 360f;
+        xRotation = Mathf.Clamp(startX, -90f, 90f);
+        cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
     }
 
     void Update()

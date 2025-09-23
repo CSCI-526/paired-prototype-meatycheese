@@ -21,7 +21,11 @@ public class WeaponController : MonoBehaviour
 
     void Fire()
     {
-        Vector3 shootDirection = Camera.main.transform.forward;
-        Instantiate(bulletPrefab, firePoint.position, Quaternion.LookRotation(shootDirection));
+        var cam = Camera.main;
+        Vector3 dir = (cam != null) ? cam.transform.forward : firePoint.forward;
+        var rot = Quaternion.LookRotation(dir);
+
+        var go = Instantiate(bulletPrefab, firePoint.position, rot);
+        Debug.Log($"Spawned bullet at {firePoint.position} dir {dir}");
     }
 }
