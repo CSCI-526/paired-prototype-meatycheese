@@ -1,19 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 /*
-Freezes an object's position
+Freezes an object's position and/or rotation
 */
 
 public class FreezeTransformLock : MonoBehaviour
 {
-    public Freezable target; //leave empty to auto-find on this object/parents
+    public Freezable target; // leave empty to auto-find on this object/parents
 
-    //Determines whether to lock a GO's position/rotation
     public bool lockPosition = true;
     public bool lockRotation = true;
 
-    //Saves the position and rotation of an object when it's first frozen
     Vector3 frozenPos;
     Quaternion frozenRot;
 
@@ -36,12 +35,9 @@ public class FreezeTransformLock : MonoBehaviour
 
         if (target.IsFrozen)
         {
-            //Take a snapshot once, then enforce it every frame
             if (!snapshotTaken)
             {
-                frozenPos = transform.position;
-                frozenRot = transform.rotation;
-                snapshotTaken = true;
+                SnapshotNow(); // 用统一函数代替重复代码
             }
 
             if (lockPosition)
@@ -52,10 +48,17 @@ public class FreezeTransformLock : MonoBehaviour
             {
                 transform.rotation = frozenRot;
             }
+        }
         else
         {
-            snapshotTaken = false; //allow new snapshot next time we freeze
+            snapshotTaken = false;
         }
-        }
+    }
+
+    public void SnapshotNow()
+    {
+        frozenPos = transform.position;
+        frozenRot = transform.rotation;
+        snapshotTaken = true;
     }
 }
