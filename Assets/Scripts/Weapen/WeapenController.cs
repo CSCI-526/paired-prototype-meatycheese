@@ -1,16 +1,19 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+//Handles shooting bullets when the user presses left-mouse button
 
 public class WeaponController : MonoBehaviour
 {
     public GameObject bulletPrefab;
-    public Transform firePoint;
+    public Transform firePoint; //Where the bullet actually spawns from
 
-    public float fireRate = 0.2f; // 0.2秒一发（更快）
+    public float fireRate = 0.2f; // 0.2秒一发（更快）| 0.2s between each shot
     private float fireCooldown = 0f;
 
     void Update()
     {
-        fireCooldown -= Time.deltaTime;
+        fireCooldown -= Time.deltaTime; //Decrease cooldown 
 
         if (Input.GetButton("Fire1") && fireCooldown <= 0f)
         {
