@@ -1,84 +1,110 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-//Bullet Behaviour
 
 [RequireComponent(typeof(Rigidbody))]
 [RequireComponent(typeof(Collider))]
 public class Bullet : MonoBehaviour
 {
     [Header("Motion")]
-    public float speed = 25f;   //Bullet Travel Speed
-    public float lifeTime = 2.0f; //Bullet lifetime before "self destructing"
+    public float speed = 25f;          // 初速度
+    public float lifeTime = 2.0f;      // 存活时间
 
     [Header("Freeze")]
-    public float freezeDuration = 2.5f; //How long to freeze objects for
+    public float freezeDuration = 2.5f; // 命中可冻结目标时的冻结时长
 
-    Rigidbody rb;
-    bool hasHit = false; //Prevents multiple hits from the same bullet
+    [Header("Hit Filter")]
+    public LayerMask hittableLayers = ~0;  // 允许命中的图层（建议只勾选放小球或平台的层）
+    public bool destroyOnNonFreezable = true; // 打到不可冻结物体是否也销毁子弹
+
+    private Rigidbody rb;
+    private Collider col;
+    private bool hasHit = false;
+    private Transform ignoreRoot;  // 可选：忽略与发射者自身的碰撞
+
+    // 初始化时可传入玩家 Transform，用于忽略与自身的碰撞
+    public void Initialize(Transform shooterRoot)
+    {
+        ignoreRoot = shooterRoot;
+        if (ignoreRoot)
+        {
+            var myCol = GetComponent<Collider>();
+            foreach (var c in ignoreRoot.GetComponentsInChildren<Collider>())
+            {
+                if (c.enabled) Physics.IgnoreCollision(myCol, c, true);
+            }
+        }
+    }
 
     void Awake()
     {
-        //Rigidbody configurations
         rb = GetComponent<Rigidbody>();
-        rb.useGravity = false;  //Prevents bullet drop (we're not making a hyper-realistic game)
-        rb.isKinematic = false; 
+        col = GetComponent<Collider>();
+
+        rb.useGravity = false;
+        rb.isKinematic = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-        //Collider configuration
-        var col = GetComponent<Collider>();
-        col.enabled = true; 
+        col.isTrigger = true; // 用触发检测命中
+        col.enabled = true;
     }
 
     void OnEnable()
     {
-        if (lifeTime > 0f)
-        {
-           Destroy(gameObject, lifeTime); 
-        } 
+        if (lifeTime > 0f) Destroy(gameObject, lifeTime);
     }
 
     void Start()
     {
-        rb.velocity = transform.forward * speed; //Shoot bullet
+        rb.velocity = transform.forward * speed;
     }
 
     void OnTriggerEnter(Collider other)
     {
-        HandleHit(other, null);
+        if (hasHit) return;
+
+        // 图层过滤：不在 hittableLayers 的直接忽略
+        if (((1 << other.gameObject.layer) & hittableLayers) == 0)
+            return;
+
+        // 避开发射者本体
+        if (ignoreRoot && other.transform.IsChildOf(ignoreRoot)) return;
+
+        HandleHit(other);
     }
 
-    void OnCollisionEnter(Collision c)
+    private void HandleHit(Collider hitCol)
     {
-        HandleHit(c.collider, c);
-    }
-
-    void HandleHit(Collider col, Collision c)
-    {
-        if (hasHit)
-        {
-            return; //Only processes the first bullet contact
-        }
         hasHit = true;
-        TryFreeze(col);
-        Destroy(gameObject);
-    }
 
-    void TryFreeze(Collider col)
-    {
-        var f = col.GetComponentInParent<IFreezable>(); //Retrieves a freezable component in object
-        if (f != null)
+        // 1. 命中小球（TargetBall）
+        var ball = hitCol.GetComponentInParent<TargetBall>();
+        if (ball != null)
         {
-            Debug.Log($"[Bullet] Freezing {((Component)f).gameObject.name} (hit collider {col.name})");
-            f.Freeze(freezeDuration);
+            Debug.Log($"[Bullet] Hit TargetBall {ball.name}");
+            ball.Freeze(freezeDuration); // 直接调用 Freeze（TargetBall 自己控制消失/恢复）
+            Destroy(gameObject);
             return;
         }
 
-        //Debug purposes if no freezable object was found (we hope this doesn't happen)
-        Transform t = col.transform;
-        string chain = t.name;
-        while (t.parent) { t = t.parent; chain = t.name + " -> " + chain; }
-        Debug.Log($"[Bullet] Hit {col.name} but no IFreezable found. Parent chain: {chain}");
+        // 2. 命中其他 Freezable
+        var freezable = hitCol.GetComponentInParent<IFreezable>();
+        if (freezable != null)
+        {
+            Debug.Log($"[Bullet] Freeze {((Component)freezable).gameObject.name} for {freezeDuration}s (hit {hitCol.name})");
+            freezable.Freeze(freezeDuration);
+            Destroy(gameObject);
+            return;
+        }
+
+        // 3. 命中不可冻结的：按开关决定是否销毁
+        if (destroyOnNonFreezable)
+        {
+            Debug.Log($"[Bullet] Hit non-freezable: {hitCol.name}");
+            Destroy(gameObject);
+        }
+        else
+        {
+            hasHit = false; // 允许继续命中下一个
+        }
     }
 }
