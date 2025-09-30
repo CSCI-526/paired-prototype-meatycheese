@@ -669,7 +669,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   sphereGroundExtra: 0.25
   cameraTransform: {fileID: 799965289}
-  mouseSensitivity: 525
+  mouseSensitivity: 250
 --- !u!143 &376619666
 CharacterController:
   m_ObjectHideFlags: 0
