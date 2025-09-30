@@ -10,15 +10,15 @@ Inherits from Freezable.cs to allow freezing.
 public class UpAndDownPlatform : Freezable
 {
     [Header("World Y positions to travel between")]
-    public float yA = 5f;   // 下边界
-    public float yB = 10f;   // 上边界
+    public float yA = 5f;   // y - point1
+    public float yB = 10f;   // y - point2
 
     [Header("Motion")]
     public float speed = 8f;
-    public float waitAtEnds = 0.50f;   // 到达端点时的等待时间
+    public float waitAtEnds = 0.50f;   // Seconds to wait at each end
 
-    private int dir = 1;          // +1 表示往 yB 移动，-1 表示往 yA 移动
-    private float waitTimer = 0f; // 端点等待计时器
+    private int dir = 1;          // Direction: +1 = up, -1 = down
+    private float waitTimer = 0f; // Wait timer at each end
 
     void Start()
     {
@@ -26,16 +26,16 @@ public class UpAndDownPlatform : Freezable
         float dA = Mathf.Abs(p.y - yA);
         float dB = Mathf.Abs(p.y - yB);
 
-        // 开始时吸附到最近的端点 (yA 或 yB)
+        // Initial position: snap to closest Y point
         transform.position = new Vector3(p.x, dA <= dB ? yA : yB, p.z);
 
-        // 初始方向：如果在 yA 就往上，否则往下
+        // Initial direction
         dir = (Mathf.Abs(transform.position.y - yA) < 0.001f) ? +1 : -1;
     }
 
     protected override void Update()
     {
-        base.Update(); // 保持冻结逻辑
+        base.Update(); // Keep freeze timer ticking
 
         if (IsFrozen)
         {
@@ -51,11 +51,11 @@ public class UpAndDownPlatform : Freezable
         float targetY = (dir > 0) ? yB : yA;
         var pos = transform.position;
 
-        // 移动到目标 Y
+        // Move towards target Y position
         float newY = Mathf.MoveTowards(pos.y, targetY, speed * Time.deltaTime);
         transform.position = new Vector3(pos.x, newY, pos.z);
 
-        // ⚡ 阈值判断（0.001f 精度足够）
+        // Check if reached target
         if (Mathf.Abs(newY - targetY) <= 0.001f)
         {
             dir *= -1;
@@ -69,7 +69,7 @@ public class UpAndDownPlatform : Freezable
         var lockComponent = GetComponent<FreezeTransformLock>();
         if (lockComponent)
         {
-            lockComponent.SnapshotNow(); // 冻结时立即锁定位置，避免抖动
+            lockComponent.SnapshotNow(); // Snapshot current transform state
         }
     }
 }

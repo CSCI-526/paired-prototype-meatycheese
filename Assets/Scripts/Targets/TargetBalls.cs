@@ -7,7 +7,7 @@ public class TargetBall : Freezable
     private Collider col; //Collider of the ball
     private MeshRenderer rend; // Renderer of the ball
 
-    // Manager 引用
+    // Manager reference to notify when frozen/unfrozen
     public TargetBallManager manager; //Reference to the manager that controls this ball
 
     protected void Awake()
