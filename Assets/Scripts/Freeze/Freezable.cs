@@ -27,7 +27,7 @@ public class Freezable : MonoBehaviour, IFreezable
         OnUnfreeze();
     }
 
-    // Optional override in child classes to change visuals, stop sounds, etc.
+    //Optional override in child classes to change visuals, stop sounds, etc.
     protected virtual void OnFreeze() { }
     protected virtual void OnUnfreeze() { }
 

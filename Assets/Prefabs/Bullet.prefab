@@ -146,9 +146,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 344c7c6361b4447529ff0e9c99ffc681, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 40
+  speed: 70
   lifeTime: 2
-  freezeDuration: 2.5
+  freezeDuration: 3
   hittableLayers:
     serializedVersion: 2
     m_Bits: 129

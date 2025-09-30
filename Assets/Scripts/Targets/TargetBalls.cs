@@ -1,4 +1,7 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+
 public class TargetBall : Freezable
 {
     private Collider col; //Collider of the ball

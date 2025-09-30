@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /*
@@ -12,8 +14,8 @@ public class UpAndDownPlatform : Freezable
     public float yB = 10f;   // 上边界
 
     [Header("Motion")]
-    public float speed = 10f;
-    public float waitAtEnds = 0.25f;   // 到达端点时的等待时间
+    public float speed = 8f;
+    public float waitAtEnds = 0.50f;   // 到达端点时的等待时间
 
     private int dir = 1;          // +1 表示往 yB 移动，-1 表示往 yA 移动
     private float waitTimer = 0f; // 端点等待计时器

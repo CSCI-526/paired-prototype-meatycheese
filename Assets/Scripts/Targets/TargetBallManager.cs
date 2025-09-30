@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -30,7 +31,7 @@ public class TargetBallManager : MonoBehaviour
 
         if (frozenCount == balls.Count)// All balls are frozen
         {
-            Debug.Log("✅ All balls frozen! Generating bridge...");
+            Debug.Log("All balls frozen! Generating bridge...");
             if (bridgePrefab && bridgeSpawnPoint)// Spawn the bridge
             {
                 Instantiate(bridgePrefab, bridgeSpawnPoint.position, bridgeSpawnPoint.rotation);

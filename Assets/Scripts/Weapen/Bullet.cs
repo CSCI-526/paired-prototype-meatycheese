@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -5,7 +7,7 @@ using UnityEngine;
 public class Bullet : MonoBehaviour
 {
     [Header("Motion")]
-    public float speed = 25f;          // 初速度
+    public float speed = 60f;          // 初速度
     public float lifeTime = 2.0f;      // 存活时间
 
     [Header("Freeze")]

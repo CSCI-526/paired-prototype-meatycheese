@@ -6,23 +6,42 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed = 5f;
-    public float jumpHeight = 1.5f;
-    public float gravity = -9.81f;
+    public float moveSpeed = 5f;          //Move speed
+
+    [Header("Jump (no hold needed)")]
+    public float jumpHeight = 3.5f;       //Jump height (m)
+    public float coyoteTime = 0.10f;      //Grace after leaving ground
+    public float jumpBufferTime = 0.12f;  //Grace after tap before landing
+    public float groundedStick = -2f;     
+
+    [Header("Gravity")]
+    public float gravity = -9.81f;        
+    public float gravityScale = 2.0f;     
+
+    [Header("Grounding Check")]
+    public LayerMask groundMask = ~0;     //Layers considered ground/platform
+    public float sphereGroundExtra = 0.25f; //How far below feet we check
 
     [Header("Mouse Look")]
     public Transform cameraTransform;
     public float mouseSensitivity = 400f;
-    private float xRotation = 0f;
 
     private CharacterController controller;
-    private Vector3 velocity;
-    private bool isGrounded;
+    private PlayerRideOnPlatforms rider;   
+    private Vector3 velocity;            
+    private float xRotation = 0f;
+
+    //Jump helpers
+    private float lastGroundedTime = -999f;
+    private float lastJumpPressedTime = -999f;
+    private bool  jumpConsumed;
 
     void Start()
     {
         controller = GetComponent<CharacterController>();
-        //Cursor.lockState = CursorLockMode.Locked;
+        rider = GetComponent<PlayerRideOnPlatforms>();
+
+        //Preserve existing camera init
         float startX = cameraTransform.localEulerAngles.x;
         if (startX > 180f) startX -= 360f;
         xRotation = Mathf.Clamp(startX, -90f, 90f);
@@ -37,25 +56,68 @@ public class PlayerController : MonoBehaviour
 
     void HandleMovement()
     {
-        isGrounded = controller.isGrounded;
-        if (isGrounded && velocity.y < 0)
+        //Capture jump tap
+        if (Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.Space))
+            lastJumpPressedTime = Time.time;
+
+        //Ground detection
+        bool grounded = controller.isGrounded;
+        if (!grounded)
         {
-            velocity.y = -2f;
+            grounded = SphereGround(out _); //Catch moving platform
+            if (!grounded && rider != null && rider.supportedThisFrame)
+                grounded = true;            //Rider says we're supported
         }
 
-        float x = Input.GetAxis("Horizontal");
-        float z = Input.GetAxis("Vertical");
-
-        Vector3 move = transform.right * x + transform.forward * z;
-        controller.Move(move * moveSpeed * Time.deltaTime);
-
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        //Ground Handling
+        if (grounded)
         {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            lastGroundedTime = Time.time;
+            jumpConsumed = false;
+            if (velocity.y < 0f) velocity.y = groundedStick;
         }
 
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
+        // 4) Buffered jump + coyote time (no hold required)
+        float effectiveGravity = gravity * gravityScale; // negative
+        bool coyoteOk = (Time.time - lastGroundedTime)  <= coyoteTime;
+        bool bufferOk = (Time.time - lastJumpPressedTime) <= jumpBufferTime;
+        if (!jumpConsumed && coyoteOk && bufferOk)
+        {
+            // v0 = sqrt(2 * g * h), with g as positive magnitude
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * effectiveGravity);
+            jumpConsumed = true;
+            lastJumpPressedTime = -999f; // clear buffer
+        }
+
+        //Gravity
+        velocity.y += effectiveGravity * Time.deltaTime;
+
+        //Horizontal movement
+        float x = Input.GetAxisRaw("Horizontal");
+        float z = Input.GetAxisRaw("Vertical");
+        Vector3 moveInput = (transform.right * x + transform.forward * z).normalized;
+        Vector3 horiz = moveInput * moveSpeed;
+
+        //Horizontal and Vertical Movement
+        Vector3 totalVelocity = horiz + Vector3.up * velocity.y;
+        controller.Move(totalVelocity * Time.deltaTime);
+    }
+
+    //Ground detection function
+    bool SphereGround(out RaycastHit hit)
+    {
+        // Sphere cast right under the feet—far more stable on moving/uneven platforms
+        Vector3 feet = transform.position + Vector3.up * 0.1f;
+        float radius = Mathf.Max(controller.radius * 0.95f, 0.2f);
+        return Physics.SphereCast(
+            feet,
+            radius,
+            Vector3.down,
+            out hit,
+            sphereGroundExtra,
+            groundMask,
+            QueryTriggerInteraction.Ignore
+        );
     }
 
     void HandleMouseLook()
@@ -75,7 +137,5 @@ public class PlayerController : MonoBehaviour
         xRotation = Mathf.Clamp(pitch, -90f, 90f);
         if (cameraTransform != null)
             cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-
     }
-
 }
